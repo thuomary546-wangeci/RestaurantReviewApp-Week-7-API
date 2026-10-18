@@ -1,0 +1,56 @@
+@page "/restaurants/{Id:int}/delete"
+@inject RestaurantApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Delete Restaurant</PageTitle>
+
+@if (loading)
+{
+    <p>Loading restaurant...</p>
+}
+else if (restaurant is null)
+{
+    <h1>Restaurant Not Found</h1>
+    <a href="/restaurants">Back to Restaurants</a>
+}
+else
+{
+    <h1>Delete Restaurant</h1>
+    <div class="warning">
+        <p>Are you sure you want to delete <strong>@restaurant.Name</strong>?</p>
+        <p>This action sends a DELETE request and removes the record from the SQLite database.</p>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <p class="error">@errorMessage</p> }
+    <button class="button danger" @onclick="HandleDeleteAsync" disabled="@deleting">@(deleting ? "Deleting..." : "Yes, Delete")</button>
+    <a class="button secondary" href="/restaurants">Cancel</a>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Restaurant? restaurant;
+    private bool loading = true;
+    private bool deleting;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try { restaurant = await Api.GetByIdAsync(Id); }
+        catch { restaurant = null; }
+        finally { loading = false; }
+    }
+
+    private async Task HandleDeleteAsync()
+    {
+        deleting = true;
+        errorMessage = null;
+        try
+        {
+            var deleted = await Api.DeleteAsync(Id);
+            if (!deleted) { errorMessage = "The restaurant was not found."; return; }
+            Navigation.NavigateTo("/restaurants");
+        }
+        catch (Exception ex) { errorMessage = $"Could not delete the restaurant. {ex.Message}"; }
+        finally { deleting = false; }
+    }
+}

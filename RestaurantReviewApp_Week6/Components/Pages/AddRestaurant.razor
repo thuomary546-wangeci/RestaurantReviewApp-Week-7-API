@@ -1,0 +1,38 @@
+@page "/restaurants/add"
+@inject RestaurantApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Add Restaurant</PageTitle>
+<h1>Add Restaurant</h1>
+<p>This form sends a POST request to the REST API.</p>
+
+<EditForm Model="newRestaurant" OnValidSubmit="HandleAddAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group"><label>Restaurant Name</label><InputText class="input" @bind-Value="newRestaurant.Name" /></div>
+    <div class="form-group"><label>Location</label><InputText class="input" @bind-Value="newRestaurant.Location" /></div>
+    <div class="form-group"><label>Cuisine Type</label><InputText class="input" @bind-Value="newRestaurant.CuisineType" /></div>
+    <div class="form-group"><label>Rating (0–5)</label><InputNumber class="input" @bind-Value="newRestaurant.Rating" /></div>
+    @if (!string.IsNullOrWhiteSpace(errorMessage)) { <p class="error">@errorMessage</p> }
+    <button class="button" type="submit" disabled="@saving">@(saving ? "Saving..." : "Add Restaurant")</button>
+    <a class="button secondary" href="/restaurants">Cancel</a>
+</EditForm>
+
+@code {
+    private Restaurant newRestaurant = new();
+    private bool saving;
+    private string? errorMessage;
+
+    private async Task HandleAddAsync()
+    {
+        saving = true;
+        errorMessage = null;
+        try
+        {
+            await Api.AddAsync(newRestaurant);
+            Navigation.NavigateTo("/restaurants");
+        }
+        catch (Exception ex) { errorMessage = $"Could not add the restaurant. {ex.Message}"; }
+        finally { saving = false; }
+    }
+}

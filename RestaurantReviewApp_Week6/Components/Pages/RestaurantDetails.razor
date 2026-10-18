@@ -1,0 +1,52 @@
+@page "/restaurants/{Id:int}"
+@inject RestaurantApiClient Api
+
+<PageTitle>Restaurant Details</PageTitle>
+
+@if (loading)
+{
+    <p>Loading restaurant details...</p>
+}
+else if (restaurant is null)
+{
+    <h1>Restaurant Not Found</h1>
+    <p>The restaurant could not be retrieved from the API.</p>
+    <a href="/restaurants">Back to Restaurants</a>
+}
+else
+{
+    <h1>@restaurant.Name</h1>
+    <div class="card details">
+        <p><strong>Location:</strong> @restaurant.Location</p>
+        <p><strong>Cuisine Type:</strong> @restaurant.CuisineType</p>
+        <p><strong>Rating:</strong> @restaurant.Rating.ToString("0.0") / 5</p>
+        <h2>Reviews</h2>
+        @if (restaurant.Reviews.Count == 0)
+        {
+            <p>No reviews yet.</p>
+        }
+        else
+        {
+            <ul>@foreach (var review in restaurant.Reviews) { <li>@review</li> }</ul>
+        }
+        <div class="actions">
+            <a href="/restaurants/@restaurant.Id/edit">Edit</a>
+            <a href="/restaurants/@restaurant.Id/review">Add Review</a>
+            <a href="/restaurants">Back to Restaurants</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Restaurant? restaurant;
+    private bool loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try { restaurant = await Api.GetByIdAsync(Id); }
+        catch { restaurant = null; }
+        finally { loading = false; }
+    }
+}

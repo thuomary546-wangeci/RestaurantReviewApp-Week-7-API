@@ -1,0 +1,45 @@
+@RestaurantReviewApi_HostAddress = http://localhost:5052
+
+### Get all restaurants
+GET {{RestaurantReviewApi_HostAddress}}/api/restaurants
+Accept: application/json
+
+### Get one restaurant
+GET {{RestaurantReviewApi_HostAddress}}/api/restaurants/1
+Accept: application/json
+
+### Add a restaurant
+POST {{RestaurantReviewApi_HostAddress}}/api/restaurants
+Content-Type: application/json
+
+{
+  "name": "Nairobi Kitchen",
+  "location": "San Diego, CA",
+  "cuisineType": "Kenyan",
+  "rating": 4.7,
+  "reviews": []
+}
+
+### Update restaurant 1
+PUT {{RestaurantReviewApi_HostAddress}}/api/restaurants/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Savanna",
+  "location": "San Diego, CA",
+  "cuisineType": "African",
+  "rating": 4.6,
+  "reviews": ["Friendly service", "Great food"]
+}
+
+### Add a review to restaurant 1
+POST {{RestaurantReviewApi_HostAddress}}/api/restaurants/1/reviews
+Content-Type: application/json
+
+{
+  "text": "The food was excellent."
+}
+
+### Delete restaurant 2
+DELETE {{RestaurantReviewApi_HostAddress}}/api/restaurants/2

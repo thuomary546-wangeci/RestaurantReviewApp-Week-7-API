@@ -1,0 +1,75 @@
+@page "/restaurants/{Id:int}/review"
+@inject RestaurantApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Add Review</PageTitle>
+
+@if (loading)
+{
+    <p>Loading restaurant...</p>
+}
+else if (restaurant is null)
+{
+    <h1>Restaurant Not Found</h1>
+    <a href="/restaurants">Back to Restaurants</a>
+}
+else
+{
+    <h1>Add Review for @restaurant.Name</h1>
+    <p>This form sends a POST request to the restaurant reviews endpoint.</p>
+    <EditForm Model="reviewModel" OnValidSubmit="HandleAddReviewAsync">
+        <DataAnnotationsValidator /><ValidationSummary />
+        <div class="form-group"><label>Review</label><InputTextArea class="input textarea" @bind-Value="reviewModel.Text" /></div>
+        @if (!string.IsNullOrWhiteSpace(errorMessage)) { <p class="error">@errorMessage</p> }
+        <button class="button" type="submit" disabled="@saving">@(saving ? "Submitting..." : "Add Review")</button>
+        <a class="button secondary" href="/restaurants/@restaurant.Id">Cancel</a>
+    </EditForm>
+
+    <div class="card">
+        <h2>Current Reviews</h2>
+        @if (restaurant.Reviews.Count == 0) { <p>No reviews yet.</p> }
+        else { <ul>@foreach (var review in restaurant.Reviews) { <li>@review</li> }</ul> }
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Restaurant? restaurant;
+    private ReviewModel reviewModel = new();
+    private bool loading = true;
+    private bool saving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try { restaurant = await Api.GetByIdAsync(Id); }
+        catch { restaurant = null; }
+        finally { loading = false; }
+    }
+
+    private async Task HandleAddReviewAsync()
+    {
+        if (restaurant is null || string.IsNullOrWhiteSpace(reviewModel.Text))
+        {
+            errorMessage = "Enter review text before submitting.";
+            return;
+        }
+        saving = true;
+        errorMessage = null;
+        try
+        {
+            restaurant = await Api.AddReviewAsync(Id, reviewModel.Text);
+            if (restaurant is null) { errorMessage = "The restaurant was not found."; return; }
+            reviewModel = new ReviewModel();
+        }
+        catch (Exception ex) { errorMessage = $"Could not add the review. {ex.Message}"; }
+        finally { saving = false; }
+    }
+
+    private sealed class ReviewModel
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Review text is required.")]
+        public string Text { get; set; } = "";
+    }
+}

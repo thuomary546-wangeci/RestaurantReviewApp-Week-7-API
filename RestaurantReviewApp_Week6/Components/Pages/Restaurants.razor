@@ -1,0 +1,68 @@
+@page "/restaurants"
+@inject RestaurantApiClient Api
+
+<PageTitle>Restaurants</PageTitle>
+
+<div class="page-heading">
+    <div>
+        <h1>All Restaurants</h1>
+        <p>Restaurant data is loaded from the REST API and SQLite database.</p>
+    </div>
+    <a class="button" href="/restaurants/add">Add Restaurant</a>
+</div>
+
+@if (loading)
+{
+    <p>Loading restaurants from the API...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <p class="error">@errorMessage</p>
+    <p>Make sure the RestaurantReviewApi project is running at http://localhost:5052.</p>
+}
+else if (restaurants.Count == 0)
+{
+    <p>No restaurants are available.</p>
+}
+else
+{
+    <div class="restaurant-grid">
+        @foreach (var restaurant in restaurants)
+        {
+            <article class="card" @key="restaurant.Id">
+                <h2>@restaurant.Name</h2>
+                <p><strong>Location:</strong> @restaurant.Location</p>
+                <p><strong>Cuisine:</strong> @restaurant.CuisineType</p>
+                <p><strong>Rating:</strong> @restaurant.Rating.ToString("0.0") / 5</p>
+                <div class="actions">
+                    <a href="/restaurants/@restaurant.Id">Details</a>
+                    <a href="/restaurants/@restaurant.Id/edit">Edit</a>
+                    <a href="/restaurants/@restaurant.Id/delete">Delete</a>
+                    <a href="/restaurants/@restaurant.Id/review">Add Review</a>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private List<Restaurant> restaurants = new();
+    private bool loading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            restaurants = await Api.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Could not retrieve restaurants from the API. {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

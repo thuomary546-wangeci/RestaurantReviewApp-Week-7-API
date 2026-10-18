@@ -1,0 +1,61 @@
+@page "/restaurants/{Id:int}/edit"
+@inject RestaurantApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Restaurant</PageTitle>
+
+@if (loading)
+{
+    <p>Loading restaurant...</p>
+}
+else if (restaurant is null)
+{
+    <h1>Restaurant Not Found</h1>
+    <a href="/restaurants">Back to Restaurants</a>
+}
+else
+{
+    <h1>Edit Restaurant</h1>
+    <p>This form sends a PUT request to update the restaurant in the database.</p>
+    <EditForm Model="restaurant" OnValidSubmit="HandleUpdateAsync">
+        <DataAnnotationsValidator /><ValidationSummary />
+        <div class="form-group"><label>Restaurant Name</label><InputText class="input" @bind-Value="restaurant.Name" /></div>
+        <div class="form-group"><label>Location</label><InputText class="input" @bind-Value="restaurant.Location" /></div>
+        <div class="form-group"><label>Cuisine Type</label><InputText class="input" @bind-Value="restaurant.CuisineType" /></div>
+        <div class="form-group"><label>Rating (0–5)</label><InputNumber class="input" @bind-Value="restaurant.Rating" /></div>
+        @if (!string.IsNullOrWhiteSpace(errorMessage)) { <p class="error">@errorMessage</p> }
+        <button class="button" type="submit" disabled="@saving">@(saving ? "Saving..." : "Update Restaurant")</button>
+        <a class="button secondary" href="/restaurants">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Restaurant? restaurant;
+    private bool loading = true;
+    private bool saving;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        try { restaurant = await Api.GetByIdAsync(Id); }
+        catch { restaurant = null; }
+        finally { loading = false; }
+    }
+
+    private async Task HandleUpdateAsync()
+    {
+        if (restaurant is null) return;
+        saving = true;
+        errorMessage = null;
+        try
+        {
+            var updated = await Api.UpdateAsync(restaurant);
+            if (!updated) { errorMessage = "The restaurant was not found."; return; }
+            Navigation.NavigateTo("/restaurants");
+        }
+        catch (Exception ex) { errorMessage = $"Could not update the restaurant. {ex.Message}"; }
+        finally { saving = false; }
+    }
+}
